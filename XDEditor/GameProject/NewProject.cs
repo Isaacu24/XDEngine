@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.DirectoryServices.ActiveDirectory;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -39,7 +40,7 @@ namespace XDEditor.GameProject
     class NewProject : ViewwModeBase
     {
         // TODO: get the path from the installation location.
-        private readonly string templatepath = @"..\..\XDEditor\ProjectTemplates";
+        private readonly string templatepath = @"..\..\XDEditor\ProjectTemplates\";
         private string projectName = "NewProject";
 
         public string ProjectName
@@ -50,7 +51,7 @@ namespace XDEditor.GameProject
                 if (projectName != value)
                 {
                     projectName = value;
-
+                    ValidateProjectPath();
                     OnPropertyChanged(nameof(projectName));
                 }
             }
@@ -65,8 +66,38 @@ namespace XDEditor.GameProject
                 if (projectPath!= value)
                 {
                     projectPath = value;
-
+                    ValidateProjectPath();
                     OnPropertyChanged(nameof(projectPath));
+                }
+            }
+        }
+
+        private bool isValid;
+
+        public bool IsValid
+        {
+            get => isValid;
+            set
+            {
+                if(value != isValid)
+                {
+                    isValid = value;
+                    OnPropertyChanged(nameof(IsValid));
+                }
+            }
+        }
+
+        private string errorMsg;
+
+        public string ErrorMsg
+        {
+            get => errorMsg;
+            set
+            {
+                if (value != errorMsg)
+                {
+                    errorMsg = value;
+                    OnPropertyChanged(nameof(ErrorMsg));
                 }
             }
         }
@@ -76,6 +107,54 @@ namespace XDEditor.GameProject
         public ReadOnlyObservableCollection<ProjectTemplate> ProjectTemplates
         {
             get;
+        }
+
+        private bool ValidateProjectPath()
+        {
+            var path = ProjectPath;
+
+            if (false == Path.EndsInDirectorySeparator(path))
+            {
+                path += @"\";
+            }
+
+            path += $@"{ProjectName}\";
+
+            IsValid = false;
+
+            if(true == string.IsNullOrWhiteSpace(ProjectName.Trim())) 
+            {
+                ErrorMsg = "Type in a project name.";
+            }
+
+            else if(-1 != ProjectName.IndexOfAny(Path.GetInvalidFileNameChars()))
+            {
+                ErrorMsg = "Invalid character(s) used in project name.";
+            }
+
+            else if(true == string.IsNullOrWhiteSpace(ProjectPath.Trim()))
+            {
+                ErrorMsg = "Select a valid project folder.";
+            }
+
+            else if (-1 != ProjectPath.IndexOfAny(Path.GetInvalidPathChars()))
+            {
+                ErrorMsg = "Invalid character(s) used in project path.";
+            }
+
+            else if (true == Directory.Exists(path) 
+                && true == Directory.EnumerateFileSystemEntries(path).Any())
+            {
+                ErrorMsg = "Selected project folder already exists and is not empty.";
+            }
+
+            else
+            {
+                ErrorMsg = string.Empty;
+                IsValid = true;
+            }
+
+            return IsValid;
         }
 
         public NewProject()
@@ -109,6 +188,8 @@ namespace XDEditor.GameProject
 
                     //Serializer.ToFile(template, file);
                 }
+
+                ValidateProjectPath();
             }
 
             catch (Exception ex)
