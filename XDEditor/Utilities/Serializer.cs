@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace XDEditor.Utilities
-{
+{       
     public static class Serializer
     {
         public static void ToFile<T>(T instance, string path)

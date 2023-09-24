@@ -57,13 +57,15 @@ namespace XDEditor.GameProject
             }
         }
 
-        private string projectPath = $@"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\XDProject\";
+        //MyComputer
+        private string projectPath = $@"{Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)}\XDProject\";
+        
         public string ProjectPath
         {
             get => projectPath;
             set
             {
-                if (projectPath!= value)
+                if (value != projectPath)
                 {
                     projectPath = value;
                     ValidateProjectPath();
@@ -77,6 +79,7 @@ namespace XDEditor.GameProject
         public bool IsValid
         {
             get => isValid;
+
             set
             {
                 if(value != isValid)
@@ -155,6 +158,57 @@ namespace XDEditor.GameProject
             }
 
             return IsValid;
+        }
+
+        public string CreateProject(ProjectTemplate template)
+        {
+            ValidateProjectPath();
+
+            if(false == IsValid)
+            {
+                return string.Empty;
+            } 
+
+            if(false == Path.EndsInDirectorySeparator(ProjectPath))
+            {
+                ProjectPath += @"\";
+            }
+
+            var path = $@"{ProjectPath}{ProjectName}\";
+
+            try
+            {
+                if(false == Directory.Exists(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
+
+                foreach (var folder in template.Folders)
+                {
+                    Directory.CreateDirectory(Path.GetFullPath(Path.Combine(Path.GetDirectoryName(path), folder)));
+                }
+
+                var dirInfo = new DirectoryInfo(path + @".xd\");
+                dirInfo.Attributes |= FileAttributes.Hidden;
+                File.Copy(template.IconFilePath, Path.GetFullPath(Path.Combine(dirInfo.FullName, "Icon.png")));
+                File.Copy(template.IconFilePath, Path.GetFullPath(Path.Combine(dirInfo.FullName, "Screenshot.png")));
+
+                //Write file.
+                //var project = new Project(ProjectName, path);
+                //Serializer.ToFile(project, path + $"{ProjectName}" + Project.Extension);
+
+                var projectXml = File.ReadAllText(template.ProjectFilePath);
+                projectXml = string.Format(projectXml, ProjectName, ProjectPath);
+                var projectpath = Path.GetFullPath(Path.Combine(path, $"{ProjectName}{Project.Extension}"));
+                File.WriteAllText(projectpath, projectXml);
+
+                return path;
+            }
+
+            catch (Exception ex)
+            {
+                return string.Empty;
+            }
         }
 
         public NewProject()
