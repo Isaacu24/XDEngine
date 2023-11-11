@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,6 +26,7 @@ namespace XDEditor
         {
             InitializeComponent();  
             Loaded += OnMainWindowLoaded;
+            Closing += OnMainWindowClosing;
         }
 
         private void OnMainWindowLoaded(object sender, RoutedEventArgs e)
@@ -33,18 +35,26 @@ namespace XDEditor
             OpenProjectBrowserDialog();
         }
 
+        private void OnMainWindowClosing(object sender, CancelEventArgs e)
+        {
+            Closing -= OnMainWindowClosing;
+            Project.Current?.Unload();
+        }
+
         private void OpenProjectBrowserDialog()
         {
             var projectBrowser = new ProjectBrowserDialog();
 
-            if (false == projectBrowser.ShowDialog())
+            if (false == projectBrowser.ShowDialog()
+                || null == projectBrowser.DataContext)
             {
                 Application.Current.Shutdown();
             }
 
             else
             {
-
+                Project.Current?.Unload(); 
+                DataContext = projectBrowser.DataContext;
             }
         }
     }

@@ -35,6 +35,13 @@ namespace XDEditor.GameProject
             if (false == string.IsNullOrEmpty(projectPath))
             { 
                 dialogResult = true;
+
+                var project = OpenProject.Open(new ProjectData()
+                {
+                    ProjectName = viewModel.ProjectName,
+                    ProjectPath = projectPath
+                });
+                window.DataContext = project;
             }
 
             window.DialogResult = dialogResult;
